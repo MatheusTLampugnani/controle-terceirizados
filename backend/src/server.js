@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
-
+const path = require('path');
 const bodyParser = require('body-parser');
 
 const app = express();
@@ -259,7 +259,12 @@ app.get('/api/portaria/historico', async (req, res) => {
     return res.status(200).json(data);
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+});
+
+app.listen(10000, () => {
+    console.log('Servidor rodando na porta 10000');
 });
