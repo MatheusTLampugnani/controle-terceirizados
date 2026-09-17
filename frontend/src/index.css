@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Brand Colors */
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --secondary-color: #10b981;
+  --secondary-hover: #059669;
+  --danger-color: #ef4444;
+  --danger-hover: #dc2626;
+
+  /* Backgrounds */
+  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  --bg-surface: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --bg-glass-hover: rgba(255, 255, 255, 0.9);
+
+  /* Text Colors */
+  --text-main: #1f2937;
+  --text-muted: #6b7280;
+  
+  /* Borders & Shadows */
+  --border-glass: rgba(255, 255, 255, 0.5);
+  --border-light: #e5e7eb;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  
+  /* Radii */
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--text-main);
+  background: var(--bg-gradient);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-glass);
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  background: var(--bg-glass-hover);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Premium Buttons */
+.btn-premium {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+.btn-premium:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+  color: white;
+}
+
+.btn-success-premium {
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+}
+
+.btn-success-premium:hover {
+  background: var(--secondary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
+  color: white;
+}
+
+/* Inputs & Forms */
+.form-control-premium {
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-control-premium:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  background: #ffffff;
+}
+
+.form-select-premium {
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.form-select-premium:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+/* Premium Table */
+.table-premium {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background: white;
+  border: 1px solid var(--border-light);
+}
+
+.table-premium th {
+  background: #f8fafc !important;
+  color: var(--text-muted) !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.table-premium td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--text-main);
+  transition: background-color 0.2s ease;
+}
+
+.table-premium tbody tr:hover td {
+  background-color: #f8fafc;
+}
+
+.table-premium tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Typography Helpers */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-color), #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Modals */
+.modal-content-premium {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.modal-header-premium {
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-light);
+  padding: 1.25rem 1.5rem;
+}
+.modal-title-premium {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* Modal Extra-Largo (além do xl padrão do Bootstrap) */
+.modal-xxl {
+  max-width: min(1200px, 95vw) !important;
+}
+
+@media (max-width: 768px) {
+  .modal-xxl {
+    max-width: 100% !important;
+    margin: 0.5rem;
+  }
+}
+
+/* ==========================================================
+   TABLET & MOBILE TOUCH OPTIMIZATIONS (UI/UX)
+   ========================================================== */
+
+/* Garante que áreas clicáveis tenham no mínimo 48x48px (Padrão de Usabilidade Touch) */
+@media (max-width: 1024px) {
+  .form-control, .form-select, .btn, .nav-link, .btn-premium, .btn-success-premium, .form-control-premium, .form-select-premium {
+    min-height: 48px;
+    font-size: 16px; /* Evita zoom automático no iOS e melhora a leitura */
+  }
+
+  /* Padding maior nas linhas da tabela para facilitar o clique */
+  .table-premium td, .table td {
+    padding: 1.25rem 1rem !important;
+  }
+}
+
+/* Container Responsivo para Assinatura (SignatureCanvas) */
+.signature-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  touch-action: none; /* Previne scroll acidental da página ao assinar no tablet */
+}
+
+/* O canvas interno da assinatura deve ocupar 100% da largura do pai */
+.sigCanvas {
+  width: 100% !important;
+  height: 200px !important;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
