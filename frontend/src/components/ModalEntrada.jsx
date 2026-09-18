@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Spinner, Image } from 'react-bootstrap';
 import api from '../services/api';
+import { getOperadorAtual } from '../utils/auth';
 
 export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
     const [loading, setLoading] = useState(false);
     const [pessoas, setPessoas] = useState([]);
     const [previewImagem, setPreviewImagem] = useState('');
 
-    const crachaLogado = localStorage.getItem('cracha_ativo');
+    const operador = getOperadorAtual();
 
     const [formData, setFormData] = useState({
         pessoa_id: '',
@@ -16,13 +17,15 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
         numero_serie: '',
         quantidade: 1,
         observacao: '',
-        cracha_entrada_id: crachaLogado || '',
+        cracha_entrada_id: operador.cracha || '',
         foto_equipamento_url: ''
     });
 
     useEffect(() => {
         if (show) {
             carregarPessoas();
+            const operadorAtualizado = getOperadorAtual();
+            setFormData(prev => ({ ...prev, cracha_entrada_id: operadorAtualizado.cracha || '' }));
         }
     }, [show]);
 
@@ -100,7 +103,7 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
                 numero_serie: '',
                 quantidade: 1,
                 observacao: '',
-                cracha_entrada_id: crachaLogado || '',
+                cracha_entrada_id: operador.cracha || '',
                 foto_equipamento_url: ''
             });
             setPreviewImagem('');
@@ -130,7 +133,6 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
                                 <Form.Select
                                     name="pessoa_id"
                                     required
-                                    size="lg"
                                     value={formData.pessoa_id}
                                     onChange={handleChange}
                                 >
