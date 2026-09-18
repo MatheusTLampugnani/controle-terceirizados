@@ -1,17 +1,21 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Form, Row, Col, Spinner } from 'react-bootstrap';
 import SignatureCanvas from 'react-signature-canvas';
+import { getOperadorAtual } from '../utils/auth';
 import api from '../services/api';
 
 export default function ModalSaida({ show, handleClose, itemSelecionado, onSaidaSucesso }) {
     const [loading, setLoading] = useState(false);
     const [observacaoSaida, setObservacaoSaida] = useState('');
+    const [autorizadoPor, setAutorizadoPor] = useState('');
 
     const sigCanvas = useRef(null);
-    const crachaLogado = localStorage.getItem('cracha_ativo');
+    const operador = getOperadorAtual();
 
     const limparAssinatura = () => {
-        sigCanvas.current.clear();
+        if (sigCanvas.current) {
+            sigCanvas.current.clear();
+        }
     };
 
     const handleLiberarSaida = async (e) => {
@@ -19,9 +23,8 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
 
         if (!itemSelecionado) return;
 
-        // Valida se a assinatura foi feita
         let assinaturaBase64 = '';
-        if (!sigCanvas.current.isEmpty()) {
+        if (sigCanvas.current && !sigCanvas.current.isEmpty()) {
             assinaturaBase64 = sigCanvas.current.getCanvas().toDataURL('image/png');
         } else {
             alert("Por favor, colete a assinatura do terceiro para comprovar a saída do equipamento.");
@@ -32,14 +35,15 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
 
         try {
             await api.put(`/portaria/saida/${itemSelecionado.id}`, {
-                cracha_saida_id: crachaLogado,
+                cracha_saida: operador.cracha,
                 observacao_saida: observacaoSaida,
-                assinatura_terceiro: assinaturaBase64 // Salva a assinatura da saída
+                autorizadoPor: autorizadoPor,
+                assinatura_terceiro: assinaturaBase64 // Envia a assinatura convertida em Base64
             });
 
             setObservacaoSaida('');
             if (sigCanvas.current) sigCanvas.current.clear();
-
+            setAutorizadoPor('');
             onSaidaSucesso();
             handleClose();
         } catch (error) {
@@ -53,7 +57,7 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
     if (!itemSelecionado) return null;
 
     return (
-        <Modal show={show} onHide={handleClose} size="xl" centered backdrop="static" dialogClassName="modal-xxl">
+        <Modal show={show} onHide={handleClose} centered backdrop="static" size="lg">
             <Modal.Header closeButton style={{ backgroundColor: '#EB2737', color: '#fff' }}>
                 <Modal.Title className="fw-bold">Liberar Saída de Equipamento</Modal.Title>
             </Modal.Header>
@@ -79,6 +83,17 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
                                     onChange={(e) => setObservacaoSaida(e.target.value)}
                                 />
                             </Form.Group>
+
+                            <Form.Group className="mt-3">
+                                <Form.Label className="fw-semibold">Autorizado por *</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Nome do responsável pela liberação"
+                                    value={autorizadoPor}
+                                    onChange={(e) => setAutorizadoPor(e.target.value)}
+                                    required
+                                />
+                            </Form.Group>
                         </Col>
                     </Row>
 
@@ -91,13 +106,13 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
                                         ref={sigCanvas}
                                         penColor="black"
                                         canvasProps={{
-                                            width: 850,
-                                            height: 250,
+                                            width: 650,
+                                            height: 180,
                                             className: 'sigCanvas'
                                         }}
                                     />
                                 </div>
-                                <div className="mt-2 text-end" style={{ width: '100%', maxWidth: '850px' }}>
+                                <div className="mt-2 text-end" style={{ width: '100%', maxWidth: '650px' }}>
                                     <Button variant="outline-secondary" size="sm" type="button" onClick={limparAssinatura}>
                                         Limpar Assinatura
                                     </Button>
@@ -108,10 +123,10 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
 
                 </Modal.Body>
                 <Modal.Footer className="bg-white">
-                    <Button variant="secondary" onClick={handleClose} disabled={loading} size="sm">
+                    <Button variant="secondary" onClick={handleClose} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button variant="success" type="submit" disabled={loading} size="sm" className="px-4 fw-bold">
+                    <Button variant="success" type="submit" disabled={loading} className="px-4 fw-bold">
                         {loading ? <Spinner as="span" animation="border" size="sm" /> : 'Confirmar Saída'}
                     </Button>
                 </Modal.Footer>

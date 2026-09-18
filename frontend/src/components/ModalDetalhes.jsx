@@ -1,52 +1,58 @@
 import React from 'react';
-import { Modal, Button, Row, Col, Card, Image, Badge } from 'react-bootstrap';
-import { BsClockHistory, BsBuilding, BsTools, BsCamera, BsPen } from 'react-icons/bs';
+import { Modal, Button, Row, Col, Card, Image } from 'react-bootstrap';
+import { BsBuilding, BsTools, BsCamera, BsPen, BsClock } from 'react-icons/bs';
 
-export default function ModalDetalhes({ show, handleClose, item, crachaAtivo }) {
+export default function ModalDetalhes({ show, handleClose, item }) {
     if (!item) return null;
 
-    const formatarDataHora = (dataIso) => {
-        if (!dataIso) return '—';
-        const data = new Date(dataIso);
-        return `${data.toLocaleDateString('pt-BR')} às ${data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
-    };
-
-    const nomeOperador = localStorage.getItem('nome_operador') || `Crachá ${crachaAtivo}`;
+    const formatarData = (dataIso) => dataIso ? new Date(dataIso).toLocaleDateString('pt-BR') : '—';
+    const formatarHora = (dataIso) => dataIso ? new Date(dataIso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
     const jaSaiu = item.data_hora_saida != null;
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
+        <Modal show={show} onHide={handleClose} size="lg" centered backdrop="static">
             <Modal.Header closeButton style={{ backgroundColor: '#EB2737', color: '#fff' }}>
                 <Modal.Title className="fw-bold">Detalhes da Movimentação</Modal.Title>
             </Modal.Header>
             <Modal.Body className="p-4 bg-light">
 
-                <Card className="border-0 shadow-sm mb-3">
-                    <Card.Header className="bg-white fw-bold text-secondary border-bottom-0 pt-3 d-flex align-items-center">
-                        <BsClockHistory className="me-2" size={18} /> Controle de Acesso
-                    </Card.Header>
-                    <Card.Body className="pt-0">
-                        <Row>
-                            <Col md={6} className="mb-2">
-                                <small className="text-muted d-block">Data/Hora de Entrada:</small>
-                                <strong className="text-dark">{formatarDataHora(item.data_hora_entrada)}</strong>
-                                <small className="d-block text-muted">Registrado por: {nomeOperador}</small>
-                            </Col>
-                            <Col md={6}>
-                                <small className="text-muted d-block">Data/Hora de Saída:</small>
-                                {jaSaiu ? (
-                                    <>
-                                        <strong className="text-success">{formatarDataHora(item.data_hora_saida)}</strong>
-                                        <small className="d-block text-muted">Liberado por: {item.cracha_saida?.nome_completo || 'N/I'}</small>
-                                    </>
-                                ) : (
-                                    <Badge bg="warning" text="dark" className="px-3 py-2 mt-1">Ainda na Empresa (Pendente)</Badge>
-                                )}
-                            </Col>
-                        </Row>
-                    </Card.Body>
-                </Card>
+                <div className="p-3 bg-light rounded border mb-3">
+                    <h6 className="fw-bold mb-3 text-secondary d-flex align-items-center gap-2">
+                        <BsClock /> Controle de Acesso
+                    </h6>
+
+                    <div className="mb-3">
+                        <div className="text-muted small">Data/Hora de Entrada:</div>
+                        <div className="fw-bold text-dark">
+                            {formatarData(item?.data_hora_entrada)} às {formatarHora(item?.data_hora_entrada)}
+                        </div>
+                        <div className="small mt-1">
+                            Registrado por: <span className="fw-semibold">{item?.cracha_entrada?.nome_completo || item?.cracha_entrada_id}</span>
+                        </div>
+                    </div>
+
+                    {jaSaiu ? (
+                        <div className="pt-3 border-top">
+                            <div className="text-muted small">Data/Hora de Saída:</div>
+                            <div className="fw-bold text-success">
+                                {formatarData(item?.data_hora_saida)} às {formatarHora(item?.data_hora_saida)}
+                            </div>
+
+                            <div className="small mt-1">
+                                Registrado por: <span className="fw-semibold">{item?.cracha_saida?.nome_completo || item?.cracha_saida_id}</span>
+                            </div>
+
+                            <div className="small mt-2 p-2 bg-white border rounded">
+                                Autorizado por: <strong style={{ color: '#EB2737' }}>{item?.autorizado_por || 'Não informado'}</strong>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="pt-3 border-top">
+                            <span className="badge bg-warning text-dark px-3 py-2">Aguardando Liberação de Saída</span>
+                        </div>
+                    )}
+                </div>
 
                 <Card className="border-0 shadow-sm mb-3">
                     <Card.Header className="bg-white fw-bold text-secondary border-bottom-0 pt-3 d-flex align-items-center">

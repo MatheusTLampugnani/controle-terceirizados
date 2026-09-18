@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Container, Row, Col, Spinner, Card, Form, InputGroup, Nav } from 'react-bootstrap';
 import api from '../services/api';
+import { getOperadorAtual } from '../utils/auth';
 import logoVideplast from '../assets/videplast-brand.png';
 import {
     BsBoxSeam,
@@ -19,7 +20,7 @@ import ModalEmpresa from '../components/ModalEmpresa';
 import ModalFuncionario from '../components/ModalFuncionario';
 import ModalDetalhes from '../components/ModalDetalhes';
 
-export default function DashboardPortaria({ crachaAtivo, onLogout }) {
+export default function DashboardPortaria({ onLogout }) {
     const [abaAtiva, setAbaAtiva] = useState('pendentes');
 
     const [pendentes, setPendentes] = useState([]);
@@ -27,7 +28,7 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
     const [loading, setLoading] = useState(true);
     const [termoBusca, setTermoBusca] = useState('');
 
-    const nomeOperador = localStorage.getItem('nome_operador') || `Crachá ${crachaAtivo}`;
+    const operador = getOperadorAtual();
 
     const [showModalEntrada, setShowModalEntrada] = useState(false);
     const [showModalEmpresa, setShowModalEmpresa] = useState(false);
@@ -47,17 +48,31 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
     }, [abaAtiva]);
 
     const carregarDados = async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            if (abaAtiva === 'pendentes') {
-                const response = await api.get('/portaria/pendentes');
-                setPendentes(response.data);
+            const rota = abaAtiva === 'pendentes' ? '/portaria/pendentes' : '/portaria/historico';
+            const response = await api.get(rota);
+
+            let dadosValidados = [];
+
+            if (Array.isArray(response.data)) {
+                dadosValidados = response.data;
+            } else if (response.data && Array.isArray(response.data.dados)) {
+                dadosValidados = response.data.dados;
             } else {
-                const response = await api.get('/portaria/historico');
-                setHistorico(response.data);
+                console.error("A API não retornou uma lista válida:", response.data);
             }
+
+            if (abaAtiva === 'pendentes') {
+                setPendentes(dadosValidados);
+            } else {
+                setHistorico(dadosValidados);
+            }
+
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
+            if (abaAtiva === 'pendentes') setPendentes([]);
+            else setHistorico([]);
         } finally {
             setLoading(false);
         }
@@ -86,31 +101,66 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
     return (
         <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', paddingBottom: '40px' }}>
             <div className="bg-white border-bottom shadow-sm py-3 mb-4" style={{ borderTop: '4px solid #EB2737' }}>
-                <Container fluid className="px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <div className="d-flex align-items-center gap-3">
-                        <img
-                            src={logoVideplast}
-                            alt="Videplast Logo"
-                            style={{ height: '45px', objectFit: 'contain' }}
-                        />
-                        <div>
-                            <span className="text-uppercase fw-bold text-secondary d-block" style={{ fontSize: '0.75rem', letterSpacing: '1px' }}>Controle de Portaria - Equipamento de Terceiros</span>
-                            <small className="text-muted">Logado como: <strong style={{ color: '#EB2737' }}>{nomeOperador}</strong></small>
+                <Container fluid className="px-3 px-md-4">
+                    <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+                        <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 gap-sm-3 w-100" style={{ minWidth: 0 }}>
+                            <img
+                                src={logoVideplast}
+                                alt="Videplast Logo"
+                                style={{ height: '40px', objectFit: 'contain' }}
+                                className="mb-1 mb-sm-0"
+                            />
+                            <div className="w-100" style={{ minWidth: 0 }}>
+                                <span
+                                    className="text-uppercase fw-bold text-secondary d-block text-truncate"
+                                    style={{ fontSize: '0.8rem', letterSpacing: '0.5px' }}
+                                >
+                                    Controle de Portaria - Terceiros
+                                </span>
+                                <small className="text-muted">
+                                    Logado como: <strong style={{ color: '#EB2737' }}>{operador.nome}</strong>
+                                </small>
+                            </div>
                         </div>
-                    </div>
-                    <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <Button variant="outline-dark" size="sm" onClick={() => setShowModalEmpresa(true)} className="d-flex align-items-center gap-1 border-secondary">
-                            <BsBuilding /> + Empresa
-                        </Button>
-                        <Button variant="outline-dark" size="sm" onClick={() => setShowModalFuncionario(true)} className="d-flex align-items-center gap-1 border-secondary">
-                            <BsPersonPlus /> + Funcionário
-                        </Button>
-                        <Button size="sm" onClick={() => setShowModalEntrada(true)} className="fw-bold px-3 d-flex align-items-center gap-1 text-white" style={{ backgroundColor: '#EB2737', border: 'none' }}>
-                            <BsPlusCircle /> Registrar Entrada
-                        </Button>
-                        <Button variant="outline-danger" size="sm" onClick={onLogout} className="d-flex align-items-center gap-1">
-                            <BsBoxArrowRight /> Sair
-                        </Button>
+
+                        <div className="d-flex flex-wrap gap-2 w-100 justify-content-start justify-content-lg-end">
+                            <Button
+                                variant="outline-dark"
+                                size="sm"
+                                onClick={() => setShowModalEmpresa(true)}
+                                className="flex-fill flex-lg-grow-0 d-flex justify-content-center align-items-center gap-1 border-secondary"
+                            >
+                                <BsBuilding /> Empresa
+                            </Button>
+
+                            <Button
+                                variant="outline-dark"
+                                size="sm"
+                                onClick={() => setShowModalFuncionario(true)}
+                                className="flex-fill flex-lg-grow-0 d-flex justify-content-center align-items-center gap-1 border-secondary"
+                            >
+                                <BsPersonPlus /> Funcionário
+                            </Button>
+
+                            <Button
+                                size="sm"
+                                onClick={() => setShowModalEntrada(true)}
+                                className="flex-fill flex-lg-grow-0 fw-bold px-3 d-flex justify-content-center align-items-center gap-1 text-white"
+                                style={{ backgroundColor: '#EB2737', border: 'none' }}
+                            >
+                                <BsPlusCircle /> Registrar
+                            </Button>
+
+                            <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={onLogout}
+                                className="flex-fill flex-lg-grow-0 d-flex justify-content-center align-items-center gap-1"
+                            >
+                                <BsBoxArrowRight /> Sair
+                            </Button>
+                        </div>
+
                     </div>
                 </Container>
             </div>
@@ -187,7 +237,6 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                             </div>
                         ) : (
                             <>
-                                {/* ====== LAYOUT CARDS - Somente Celular (< md) ====== */}
                                 <div className="d-md-none p-3">
                                     {listaFiltrada.length > 0 ? listaFiltrada.map((item) => {
                                         const jaSaiu = item.data_hora_saida != null;
@@ -199,7 +248,6 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <div className="card-body p-3">
-                                                    {/* Status Badge no topo */}
                                                     <div className="d-flex justify-content-between align-items-start mb-2">
                                                         <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
                                                             {item.equipamento_descricao}
@@ -210,7 +258,6 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                                                         }
                                                     </div>
 
-                                                    {/* Empresa e Terceiro */}
                                                     <div className="mb-2">
                                                         <div className="fw-semibold text-dark">{item.pessoas_terceiras?.nome || '—'}</div>
                                                         <small style={{ color: '#EB2737', fontWeight: '600' }}>
@@ -218,7 +265,6 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                                                         </small>
                                                     </div>
 
-                                                    {/* Linha de info secundária */}
                                                     <div className="d-flex flex-wrap gap-3 text-muted" style={{ fontSize: '0.8rem' }}>
                                                         <span>
                                                             <strong>Entrada:</strong> {formatarHora(item.data_hora_entrada)} · {formatarData(item.data_hora_entrada)}
@@ -228,7 +274,13 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                                                         </span>
                                                     </div>
 
-                                                    {/* Botão de ação */}
+                                                    {jaSaiu && item.autorizado_por && (
+                                                        <div className="mt-2" style={{ fontSize: '0.85rem' }}>
+                                                            <span className="text-muted">Autorizado por: </span>
+                                                            <strong style={{ color: '#EB2737' }}>{item.autorizado_por}</strong>
+                                                        </div>
+                                                    )}
+
                                                     {abaAtiva === 'pendentes' && (
                                                         <div className="mt-3">
                                                             <Button
@@ -255,7 +307,6 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
                                     )}
                                 </div>
 
-                                {/* ====== LAYOUT TABELA - Tablet e Desktop (>= md) ====== */}
                                 <div className="d-none d-md-block table-responsive">
                                     <Table hover className="align-middle mb-0 text-nowrap">
                                         <thead className="text-uppercase fs-7 text-white" style={{ backgroundColor: '#EB2737' }}>
@@ -324,12 +375,12 @@ export default function DashboardPortaria({ crachaAtivo, onLogout }) {
 
                                                             <td className="text-center d-none d-md-table-cell">
                                                                 {jaSaiu ? (
-                                                                    <small className="text-muted d-block">
-                                                                        Liberado por: <strong>{item.cracha_saida?.nome_completo || 'Portaria'}</strong>
+                                                                    <small className="text-muted d-block text-start">
+                                                                        Autorizado por: <strong style={{ color: '#EB2737' }}>{item.autorizado_por}</strong>
                                                                     </small>
                                                                 ) : (
-                                                                    <small className="text-muted d-block">
-                                                                        Entrada por: <strong>{item.cracha_entrada?.nome_completo || 'Portaria'}</strong>
+                                                                    <small className="text-muted d-block text-start">
+                                                                        Entrada por: <br /><strong>{item.cracha_entrada?.nome_completo || item.cracha_entrada}</strong>
                                                                     </small>
                                                                 )}
                                                             </td>

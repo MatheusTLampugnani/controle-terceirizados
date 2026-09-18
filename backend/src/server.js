@@ -13,7 +13,28 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
 
 
-/**Função de entrada **/
+/** Função auxiliar para enriquecer os registros com os nomes dos crachás **/
+async function enriquecerRegistros(registros) {
+    if (!registros || registros.length === 0) return [];
+
+    // Busca todos os crachás de uma vez para otimizar
+    const { data: crachas } = await supabase.from('crachas').select('id, nome_completo');
+    const mapaCrachas = {};
+    if (crachas) {
+        crachas.forEach(c => {
+            mapaCrachas[c.id] = c.nome_completo;
+        });
+    }
+
+    return registros.map(item => ({
+        ...item,
+        cracha_entrada: item.cracha_entrada_id ? { id: item.cracha_entrada_id, nome_completo: mapaCrachas[item.cracha_entrada_id] || `Crachá ${item.cracha_entrada_id}` } : null,
+        cracha_saida: item.cracha_saida_id ? { id: item.cracha_saida_id, nome_completo: mapaCrachas[item.cracha_saida_id] || `Crachá ${item.cracha_saida_id}` } : null
+    }));
+}
+
+
+/** Função de entrada **/
 app.post('/api/portaria/entrada', async (req, res) => {
     const {
         pessoa_id,
@@ -69,7 +90,7 @@ app.post('/api/portaria/entrada', async (req, res) => {
                 numero_serie,
                 quantidade,
                 observacao,
-                cracha_entrada_id,
+                cracha_entrada_id: cracha_entrada_id,
                 foto_equipamento_url: linkFoto,
                 assinatura_terceiro: linkAssinatura
             }])
@@ -85,10 +106,10 @@ app.post('/api/portaria/entrada', async (req, res) => {
 });
 
 
-/**Função de saida **/
+/** Função de saída **/
 app.put('/api/portaria/saida/:id', async (req, res) => {
     const { id } = req.params;
-    const { cracha_saida_id, observacao_saida, assinatura_terceiro } = req.body;
+    const { cracha_saida, observacao_saida, assinatura_terceiro, autorizadoPor } = req.body;
 
     try {
         let linkAssinaturaSaida = null;
@@ -116,8 +137,9 @@ app.put('/api/portaria/saida/:id', async (req, res) => {
             .from('registros_portaria')
             .update({
                 data_hora_saida: new Date(),
-                cracha_saida_id,
-                observacao: observacao_saida ? `Saída: ${observacao_saida}` : null,
+                cracha_saida_id: cracha_saida,
+                autorizado_por: autorizadoPor,
+                observacao: observacao_saida ? `Saída: ${observacao_saida}` : undefined,
                 assinatura_terceiro: linkAssinaturaSaida || undefined
             })
             .eq('id', id)
@@ -133,7 +155,7 @@ app.put('/api/portaria/saida/:id', async (req, res) => {
 });
 
 
-/**Função de consultas  **/
+/** Função de consultas (Pendentes) **/
 app.get('/api/portaria/pendentes', async (req, res) => {
     const { data, error } = await supabase
         .from('registros_portaria')
@@ -147,6 +169,9 @@ app.get('/api/portaria/pendentes', async (req, res) => {
             observacao,
             foto_equipamento_url,
             assinatura_terceiro,
+            autorizado_por,
+            cracha_entrada_id,
+            cracha_saida_id,
             pessoas_terceiras (
                 nome, 
                 documento, 
@@ -160,11 +185,12 @@ app.get('/api/portaria/pendentes', async (req, res) => {
         return res.status(400).json({ erro: error.message, detalhes: error });
     }
 
-    return res.status(200).json(data);
+    const dadosEnriquecidos = await enriquecerRegistros(data);
+    return res.status(200).json(dadosEnriquecidos);
 });
 
 
-/**Função de cadastro de empresas **/
+/** Função de cadastro de empresas **/
 app.post('/api/portaria/empresas', async (req, res) => {
     const { nome, cnpj } = req.body;
 
@@ -184,7 +210,7 @@ app.post('/api/portaria/empresas', async (req, res) => {
 });
 
 
-/**Função de consultas de empresas **/
+/** Função de consultas de empresas **/
 app.get('/api/portaria/empresas', async (req, res) => {
     const { data, error } = await supabase.from('empresas_terceiras').select('*').order('nome');
     if (error) return res.status(400).json({ erro: error.message });
@@ -192,7 +218,7 @@ app.get('/api/portaria/empresas', async (req, res) => {
 });
 
 
-/**Função de cadastro de pessoas**/
+/** Função de cadastro de pessoas **/
 app.post('/api/portaria/pessoas', async (req, res) => {
     const { empresa_id, nome, documento } = req.body;
     const { data, error } = await supabase.from('pessoas_terceiras').insert([{ empresa_id, nome, documento }]).select();
@@ -201,7 +227,7 @@ app.post('/api/portaria/pessoas', async (req, res) => {
 });
 
 
-/**Função de consultas de pessoas **/
+/** Função de consultas de pessoas **/
 app.get('/api/portaria/pessoas', async (req, res) => {
     const { data, error } = await supabase.from('pessoas_terceiras').select('*, empresas_terceiras(nome)').order('nome');
     if (error) return res.status(400).json({ erro: error.message });
@@ -209,7 +235,7 @@ app.get('/api/portaria/pessoas', async (req, res) => {
 });
 
 
-/**Função de login **/
+/** Função de login **/
 app.get('/api/portaria/login/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -227,7 +253,7 @@ app.get('/api/portaria/login/:id', async (req, res) => {
 });
 
 
-/**Função de consultas de registros **/
+/** Função de consultas de registros (Histórico) **/
 app.get('/api/portaria/historico', async (req, res) => {
     const { data, error } = await supabase
         .from('registros_portaria')
@@ -242,7 +268,9 @@ app.get('/api/portaria/historico', async (req, res) => {
             observacao,
             foto_equipamento_url,
             assinatura_terceiro,
-            conferido_saida,
+            autorizado_por,
+            cracha_entrada_id,
+            cracha_saida_id,
             pessoas_terceiras (
                 nome, 
                 documento, 
@@ -256,7 +284,8 @@ app.get('/api/portaria/historico', async (req, res) => {
         return res.status(400).json({ erro: error.message });
     }
 
-    return res.status(200).json(data);
+    const dadosEnriquecidos = await enriquecerRegistros(data);
+    return res.status(200).json(dadosEnriquecidos);
 });
 
 app.use(express.static(path.join(__dirname, '../../frontend/dist')));
