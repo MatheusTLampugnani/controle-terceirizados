@@ -22,13 +22,13 @@ import ModalDetalhes from '../components/ModalDetalhes';
 
 export default function DashboardPortaria({ onLogout }) {
     const [abaAtiva, setAbaAtiva] = useState('pendentes');
-
     const [pendentes, setPendentes] = useState([]);
     const [historico, setHistorico] = useState([]);
     const [loading, setLoading] = useState(true);
     const [termoBusca, setTermoBusca] = useState('');
 
     const operador = getOperadorAtual();
+    const [nomeOperadorExibicao, setNomeOperadorExibicao] = useState(operador.nome);
 
     const [showModalEntrada, setShowModalEntrada] = useState(false);
     const [showModalEmpresa, setShowModalEmpresa] = useState(false);
@@ -38,15 +38,7 @@ export default function DashboardPortaria({ onLogout }) {
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [itemDetalhes, setItemDetalhes] = useState(null);
 
-    const abrirModalDetalhes = (item) => {
-        setItemDetalhes(item);
-        setShowModalDetalhes(true);
-    };
-
-    useEffect(() => {
-        carregarDados();
-    }, [abaAtiva]);
-
+    // Função de carregamento declarada antes de ser utilizada nos hooks/botões
     const carregarDados = async () => {
         setLoading(true);
         try {
@@ -76,6 +68,33 @@ export default function DashboardPortaria({ onLogout }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const buscarNomeOperadorReal = async () => {
+        const crachaAtivo = localStorage.getItem('cracha_ativo');
+        if (!crachaAtivo) return;
+
+        try {
+            const response = await api.get(`/portaria/login/${crachaAtivo}`);
+            if (response.data && response.data.usuario) {
+                const nomeCompleto = response.data.usuario.nome_completo;
+                localStorage.setItem('nome_operador', nomeCompleto);
+                setNomeOperadorExibicao(`${nomeCompleto} - ${crachaAtivo}`);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar nome completo do operador:", error);
+            setNomeOperadorExibicao(`Operador - ${crachaAtivo}`);
+        }
+    };
+
+    useEffect(() => {
+        carregarDados();
+        buscarNomeOperadorReal();
+    }, [abaAtiva]);
+
+    const abrirModalDetalhes = (item) => {
+        setItemDetalhes(item);
+        setShowModalDetalhes(true);
     };
 
     const abrirModalSaida = (item) => {
@@ -118,7 +137,7 @@ export default function DashboardPortaria({ onLogout }) {
                                     Controle de Portaria - Terceiros
                                 </span>
                                 <small className="text-muted">
-                                    Logado como: <strong style={{ color: '#EB2737' }}>{operador.nome}</strong>
+                                    Logado como: <strong style={{ color: '#EB2737' }}>{nomeOperadorExibicao}</strong>
                                 </small>
                             </div>
                         </div>
@@ -376,11 +395,12 @@ export default function DashboardPortaria({ onLogout }) {
                                                             <td className="text-center d-none d-md-table-cell">
                                                                 {jaSaiu ? (
                                                                     <small className="text-muted d-block text-start">
-                                                                        Autorizado por: <strong style={{ color: '#EB2737' }}>{item.autorizado_por}</strong>
+                                                                        Operador (Saída): <strong>{item.cracha_saida?.nome_completo || item.cracha_saida || 'Portaria'}</strong><br />
+                                                                        Autorizado por: <strong style={{ color: '#EB2737' }}>{item.autorizado_por || 'Não informado'}</strong>
                                                                     </small>
                                                                 ) : (
                                                                     <small className="text-muted d-block text-start">
-                                                                        Entrada por: <br /><strong>{item.cracha_entrada?.nome_completo || item.cracha_entrada}</strong>
+                                                                        Entrada por: <br /><strong>{item.cracha_entrada?.nome_completo || item.cracha_entrada || 'Portaria'}</strong>
                                                                     </small>
                                                                 )}
                                                             </td>
