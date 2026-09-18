@@ -109,7 +109,7 @@ app.post('/api/portaria/entrada', async (req, res) => {
 /** Função de saída **/
 app.put('/api/portaria/saida/:id', async (req, res) => {
     const { id } = req.params;
-    const { cracha_saida, observacao_saida, assinatura_terceiro, autorizadoPor } = req.body;
+    const { cracha_saida, observacao_saida, assinatura_terceiro, autorizadoPor, retiradoPor } = req.body;
 
     try {
         let linkAssinaturaSaida = null;
@@ -139,6 +139,7 @@ app.put('/api/portaria/saida/:id', async (req, res) => {
                 data_hora_saida: new Date(),
                 cracha_saida_id: cracha_saida,
                 autorizado_por: autorizadoPor,
+                retirado_por: retiradoPor,
                 observacao: observacao_saida ? `Saída: ${observacao_saida}` : undefined,
                 assinatura_terceiro: linkAssinaturaSaida || undefined
             })
