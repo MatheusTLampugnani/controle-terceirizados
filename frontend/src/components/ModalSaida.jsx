@@ -8,6 +8,7 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
     const [loading, setLoading] = useState(false);
     const [observacaoSaida, setObservacaoSaida] = useState('');
     const [autorizadoPor, setAutorizadoPor] = useState('');
+    const [retiradoPor, setRetiradoPor] = useState('');
 
     const sigCanvas = useRef(null);
     const operador = getOperadorAtual();
@@ -38,12 +39,14 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
                 cracha_saida: operador.cracha,
                 observacao_saida: observacaoSaida,
                 autorizadoPor: autorizadoPor,
-                assinatura_terceiro: assinaturaBase64 // Envia a assinatura convertida em Base64
+                retiradoPor: retiradoPor,
+                assinatura_terceiro: assinaturaBase64
             });
 
             setObservacaoSaida('');
             if (sigCanvas.current) sigCanvas.current.clear();
             setAutorizadoPor('');
+            setRetiradoPor('');
             onSaidaSucesso();
             handleClose();
         } catch (error) {
@@ -83,14 +86,30 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
                                     onChange={(e) => setObservacaoSaida(e.target.value)}
                                 />
                             </Form.Group>
+                        </Col>
+                    </Row>
 
-                            <Form.Group className="mt-3">
+                    <Row className="mb-4">
+                        <Col md={6}>
+                            <Form.Group>
                                 <Form.Label className="fw-semibold">Autorizado por *</Form.Label>
                                 <Form.Control
                                     type="text"
-                                    placeholder="Nome do responsável pela liberação"
+                                    placeholder="Quem liberou a saída"
                                     value={autorizadoPor}
                                     onChange={(e) => setAutorizadoPor(e.target.value)}
+                                    required
+                                />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="fw-semibold">Retirado por *</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    placeholder="Quem retirou o equipamento"
+                                    value={retiradoPor}
+                                    onChange={(e) => setRetiradoPor(e.target.value)}
                                     required
                                 />
                             </Form.Group>
@@ -106,13 +125,13 @@ export default function ModalSaida({ show, handleClose, itemSelecionado, onSaida
                                         ref={sigCanvas}
                                         penColor="black"
                                         canvasProps={{
-                                            width: 650,
+                                            width: 700,
                                             height: 180,
                                             className: 'sigCanvas'
                                         }}
                                     />
                                 </div>
-                                <div className="mt-2 text-end" style={{ width: '100%', maxWidth: '650px' }}>
+                                <div className="mt-2 text-end" style={{ width: '100%', maxWidth: '700px' }}>
                                     <Button variant="outline-secondary" size="sm" type="button" onClick={limparAssinatura}>
                                         Limpar Assinatura
                                     </Button>
