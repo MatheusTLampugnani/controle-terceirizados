@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Spinner, Image } from 'react-bootstrap';
 import api from '../services/api';
-import { getOperadorAtual } from '../utils/auth';
 
 export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
     const [loading, setLoading] = useState(false);
     const [pessoas, setPessoas] = useState([]);
     const [previewImagem, setPreviewImagem] = useState('');
 
-    const operador = getOperadorAtual();
+    const crachaLogado = localStorage.getItem('cracha_ativo');
 
     const [formData, setFormData] = useState({
         pessoa_id: '',
@@ -17,15 +16,13 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
         numero_serie: '',
         quantidade: 1,
         observacao: '',
-        cracha_entrada_id: operador.cracha || '',
+        cracha_entrada_id: crachaLogado || '',
         foto_equipamento_url: ''
     });
 
     useEffect(() => {
         if (show) {
             carregarPessoas();
-            const operadorAtualizado = getOperadorAtual();
-            setFormData(prev => ({ ...prev, cracha_entrada_id: operadorAtualizado.cracha || '' }));
         }
     }, [show]);
 
@@ -103,7 +100,7 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
                 numero_serie: '',
                 quantidade: 1,
                 observacao: '',
-                cracha_entrada_id: operador.cracha || '',
+                cracha_entrada_id: crachaLogado || '',
                 foto_equipamento_url: ''
             });
             setPreviewImagem('');
@@ -237,10 +234,10 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
 
                 </Modal.Body>
                 <Modal.Footer className="bg-light px-4 py-3">
-                    <Button variant="secondary" onClick={handleClose} disabled={loading} size="lg">
+                    <Button variant="secondary" onClick={handleClose} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button variant="danger" type="submit" disabled={loading} size="lg" style={{ backgroundColor: '#EB2737', border: 'none' }}>
+                    <Button variant="danger" type="submit" disabled={loading} style={{ backgroundColor: '#EB2737', border: 'none' }}>
                         {loading ? <Spinner as="span" animation="border" size="sm" /> : 'Confirmar Entrada'}
                     </Button>
                 </Modal.Footer>

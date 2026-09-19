@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Button, Row, Col, Card, Image } from 'react-bootstrap';
-import { BsBuilding, BsTools, BsCamera, BsPen, BsClock } from 'react-icons/bs';
+import { BsBuilding, BsTools, BsCamera, BsPen, BsClock, BsPrinter } from 'react-icons/bs';
+import { gerarTermoEntradaPDF } from '../utils/gerarTermoPdf';
 
 export default function ModalDetalhes({ show, handleClose, item }) {
     if (!item) return null;
@@ -9,6 +10,22 @@ export default function ModalDetalhes({ show, handleClose, item }) {
     const formatarHora = (dataIso) => dataIso ? new Date(dataIso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
 
     const jaSaiu = item.data_hora_saida != null;
+
+    const handleImprimir = async () => {
+        const dadosPdf = {
+            dataEntrada: item.data_hora_entrada,
+            dataSaida: item.data_hora_saida,
+            equipamentoDescricao: item.equipamento_descricao,
+            marcaModelo: item.marca_modelo,
+            numeroSerie: item.numero_serie,
+            quantidade: item.quantidade,
+            terceiroNome: item.pessoas_terceiras?.nome,
+            empresaNome: item.pessoas_terceiras?.empresas_terceiras?.nome,
+            operadorNome: item.cracha_entrada?.nome_completo || item.cracha_entrada_id || 'Portaria',
+            fotoEquipamento: item.foto_equipamento_url
+        };
+        await gerarTermoEntradaPDF(dadosPdf);
+    };
 
     return (
         <Modal show={show} onHide={handleClose} size="lg" centered backdrop="static">
@@ -28,7 +45,7 @@ export default function ModalDetalhes({ show, handleClose, item }) {
                             {formatarData(item?.data_hora_entrada)} às {formatarHora(item?.data_hora_entrada)}
                         </div>
                         <div className="small mt-1">
-                            Registrado por: <span className="fw-semibold">{item?.cracha_entrada?.nome_completo || item?.cracha_entrada_id}</span>
+                            Registrado por: <span className="fw-semibold">{item?.cracha_entrada?.nome_completo || item?.cracha_entrada_id || 'N/I'}</span>
                         </div>
                     </div>
 
@@ -40,12 +57,18 @@ export default function ModalDetalhes({ show, handleClose, item }) {
                             </div>
 
                             <div className="small mt-1">
-                                Registrado por: <span className="fw-semibold">{item?.cracha_saida?.nome_completo || item?.cracha_saida_id}</span>
+                                Registrado por: <span className="fw-semibold">{item?.cracha_saida?.nome_completo || item?.cracha_saida_id || 'N/I'}</span>
                             </div>
 
                             <div className="small mt-2 p-2 bg-white border rounded">
                                 Autorizado por: <strong style={{ color: '#EB2737' }}>{item?.autorizado_por || 'Não informado'}</strong>
                             </div>
+
+                            {item?.retirado_por && (
+                                <div className="small mt-2 p-2 bg-white border rounded">
+                                    Retirado por: <strong className="text-dark">{item.retirado_por}</strong>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="pt-3 border-top">
@@ -140,8 +163,10 @@ export default function ModalDetalhes({ show, handleClose, item }) {
                 </Row>
 
             </Modal.Body>
-            <Modal.Footer className="bg-white">
-                <Button variant="secondary" onClick={handleClose} size="lg">
+            <Modal.Footer className="mb-2 bg-white">
+                <Button variant="danger" onClick={handleImprimir} className="d-flex align-items-center gap-2 fw-bold" style={{ backgroundColor: '#EB2737', border: 'none' }}>Imprimir Via
+                </Button>
+                <Button variant="secondary" onClick={handleClose}>
                     Fechar
                 </Button>
             </Modal.Footer>
