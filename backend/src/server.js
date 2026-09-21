@@ -36,69 +36,47 @@ async function enriquecerRegistros(registros) {
 
 /** Função de entrada **/
 app.post('/api/portaria/entrada', async (req, res) => {
-    const {
-        pessoa_id,
-        equipamento_descricao,
-        marca_modelo,
-        numero_serie,
-        quantidade,
-        observacao,
-        cracha_entrada_id,
-        foto_equipamento_url,
-        assinatura_terceiro
-    } = req.body;
+    const { pessoa_id, cracha_entrada_id, equipamentos } = req.body;
 
     try {
         const uploadBase64 = async (base64String, pasta, prefixo) => {
             if (!base64String || !base64String.startsWith('data:image')) return null;
-
             const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
             if (!matches || matches.length !== 3) return null;
 
             const mimeType = matches[1];
-            const base64Data = matches[2];
-            const buffer = Buffer.from(base64Data, 'base64');
+            const buffer = Buffer.from(matches[2], 'base64');
             const extension = mimeType.split('/')[1];
-
             const fileName = `${pasta}/${prefixo}_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
 
-            const { error } = await supabase.storage
-                .from('registro-portaria')
-                .upload(fileName, buffer, {
-                    contentType: mimeType,
-                    upsert: false
-                });
-
+            const { error } = await supabase.storage.from('registro-portaria').upload(fileName, buffer, { contentType: mimeType, upsert: false });
             if (error) throw error;
 
-            const { data } = supabase.storage
-                .from('registro-portaria')
-                .getPublicUrl(fileName);
-
+            const { data } = supabase.storage.from('registro-portaria').getPublicUrl(fileName);
             return data.publicUrl;
         };
 
-        let linkFoto = await uploadBase64(foto_equipamento_url, 'fotos', 'eqp');
-        let linkAssinatura = await uploadBase64(assinatura_terceiro, 'assinaturas', 'ass');
+        const registrosParaInserir = [];
 
-        const { data, error } = await supabase
-            .from('registros_portaria')
-            .insert([{
+        for (const eqp of equipamentos) {
+            let linkFoto = await uploadBase64(eqp.foto_equipamento_url, 'fotos', 'eqp');
+
+            registrosParaInserir.push({
                 pessoa_id,
-                equipamento_descricao,
-                marca_modelo,
-                numero_serie,
-                quantidade,
-                observacao,
-                cracha_entrada_id: cracha_entrada_id,
-                foto_equipamento_url: linkFoto,
-                assinatura_terceiro: linkAssinatura
-            }])
-            .select();
+                cracha_entrada_id,
+                equipamento_descricao: eqp.equipamento_descricao,
+                marca_modelo: eqp.marca_modelo,
+                numero_serie: eqp.numero_serie,
+                quantidade: eqp.quantidade,
+                observacao: eqp.observacao,
+                foto_equipamento_url: linkFoto
+            });
+        }
 
+        const { data, error } = await supabase.from('registros_portaria').insert(registrosParaInserir).select();
         if (error) throw error;
 
-        return res.status(201).json({ mensagem: 'Entrada registrada com sucesso!', dados: data });
+        return res.status(201).json({ mensagem: 'Lote de entrada registrado com sucesso!', dados: data });
     } catch (err) {
         console.error("ERRO NO UPLOAD/INSERT:", err);
         return res.status(400).json({ erro: err.message });
