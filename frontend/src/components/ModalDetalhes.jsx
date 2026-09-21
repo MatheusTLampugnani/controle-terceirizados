@@ -22,7 +22,8 @@ export default function ModalDetalhes({ show, handleClose, item }) {
             terceiroNome: item.pessoas_terceiras?.nome,
             empresaNome: item.pessoas_terceiras?.empresas_terceiras?.nome,
             operadorNome: item.cracha_entrada?.nome_completo || item.cracha_entrada_id || 'Portaria',
-            fotoEquipamento: item.foto_equipamento_url
+            fotoEquipamento: item.foto_equipamento_url,
+            assinaturaTerceiro: item.assinatura_terceiro
         };
         await gerarTermoEntradaPDF(dadosPdf);
     };
