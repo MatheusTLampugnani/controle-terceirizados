@@ -12,7 +12,8 @@ import {
     BsBoxArrowRight,
     BsArrowClockwise,
     BsInbox,
-    BsClockHistory
+    BsClockHistory,
+    BsCheckSquare
 } from 'react-icons/bs';
 import ModalEntrada from '../components/ModalEntrada';
 import ModalSaida from '../components/ModalSaida';
@@ -34,11 +35,11 @@ export default function DashboardPortaria({ onLogout }) {
     const [showModalEmpresa, setShowModalEmpresa] = useState(false);
     const [showModalFuncionario, setShowModalFuncionario] = useState(false);
     const [showModalSaida, setShowModalSaida] = useState(false);
-    const [itemParaSaida, setItemParaSaida] = useState(null);
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [itemDetalhes, setItemDetalhes] = useState(null);
 
-    // Função de carregamento declarada antes de ser utilizada nos hooks/botões
+    const [itensSelecionados, setItensSelecionados] = useState([]);
+
     const carregarDados = async () => {
         setLoading(true);
         try {
@@ -60,6 +61,8 @@ export default function DashboardPortaria({ onLogout }) {
             } else {
                 setHistorico(dadosValidados);
             }
+
+            setItensSelecionados([]);
 
         } catch (error) {
             console.error("Erro ao buscar dados:", error);
@@ -97,8 +100,25 @@ export default function DashboardPortaria({ onLogout }) {
         setShowModalDetalhes(true);
     };
 
-    const abrirModalSaida = (item) => {
-        setItemParaSaida(item);
+    const toggleSelecaoItem = (item) => {
+        const jaSelecionado = itensSelecionados.some(i => i.id === item.id);
+        if (jaSelecionado) {
+            setItensSelecionados(itensSelecionados.filter(i => i.id !== item.id));
+        } else {
+            setItensSelecionados([...itensSelecionados, item]);
+        }
+    };
+
+    const toggleSelecionarTodos = (lista) => {
+        if (itensSelecionados.length === lista.length && lista.length > 0) {
+            setItensSelecionados([]);
+        } else {
+            setItensSelecionados([...lista]);
+        }
+    };
+
+    const acionarSaidaUnica = (item) => {
+        setItensSelecionados([item]);
         setShowModalSaida(true);
     };
 
@@ -167,7 +187,7 @@ export default function DashboardPortaria({ onLogout }) {
                                 className="flex-fill flex-lg-grow-0 fw-bold px-3 d-flex justify-content-center align-items-center gap-1 text-white"
                                 style={{ backgroundColor: '#EB2737', border: 'none' }}
                             >
-                                <BsPlusCircle /> Registrar
+                                <BsPlusCircle /> Registrar Entrada
                             </Button>
 
                             <Button
@@ -179,7 +199,6 @@ export default function DashboardPortaria({ onLogout }) {
                                 <BsBoxArrowRight /> Sair
                             </Button>
                         </div>
-
                     </div>
                 </Container>
             </div>
@@ -239,6 +258,18 @@ export default function DashboardPortaria({ onLogout }) {
                     </Col>
                 </Row>
 
+                {abaAtiva === 'pendentes' && itensSelecionados.length > 0 && (
+                    <div className="bg-warning p-2 mb-3 rounded d-inline-flex align-items-center justify-content-between gap-4 shadow-sm border border-warning">
+                        <div className="d-flex align-items-center gap-2 text-dark">
+                            <BsCheckSquare size={18} />
+                            <span className="fs-6 fw-bold">{itensSelecionados.length} equipamento(s) selecionado(s)</span>
+                        </div>
+                        <Button variant="danger" size="sm" className="fw-bold px-3 shadow-none" onClick={() => setShowModalSaida(true)}>
+                            Liberar Saída de Todos
+                        </Button>
+                    </div>
+                )}
+
                 <Card className="border-0 shadow-sm">
                     <Card.Header className="bg-white py-3 border-bottom d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
                         <h5 className="m-0 fw-bold" style={{ color: '#EB2737' }}>
@@ -259,18 +290,31 @@ export default function DashboardPortaria({ onLogout }) {
                                 <div className="d-md-none p-3">
                                     {listaFiltrada.length > 0 ? listaFiltrada.map((item) => {
                                         const jaSaiu = item.data_hora_saida != null;
+                                        const selecionado = itensSelecionados.some(i => i.id === item.id);
+
                                         return (
                                             <div
                                                 key={item.id}
                                                 className="card mb-3 border-0 shadow-sm"
                                                 onClick={() => abrirModalDetalhes(item)}
-                                                style={{ cursor: 'pointer' }}
+                                                style={{ cursor: 'pointer', backgroundColor: selecionado ? '#fff3cd' : '#fff' }}
                                             >
                                                 <div className="card-body p-3">
                                                     <div className="d-flex justify-content-between align-items-start mb-2">
-                                                        <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
-                                                            {item.equipamento_descricao}
-                                                        </span>
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            {abaAtiva === 'pendentes' && (
+                                                                <div onClick={(e) => e.stopPropagation()}>
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        checked={selecionado}
+                                                                        onChange={() => toggleSelecaoItem(item)}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <span className="fw-bold text-dark" style={{ fontSize: '1rem' }}>
+                                                                {item.equipamento_descricao}
+                                                            </span>
+                                                        </div>
                                                         {jaSaiu
                                                             ? <span className="badge bg-success">Saiu</span>
                                                             : <span className="badge bg-warning text-dark">Pendente</span>
@@ -308,7 +352,7 @@ export default function DashboardPortaria({ onLogout }) {
                                                                 size="lg"
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
-                                                                    abrirModalSaida(item);
+                                                                    acionarSaidaUnica(item);
                                                                 }}
                                                             >
                                                                 Liberar Saída
@@ -330,7 +374,16 @@ export default function DashboardPortaria({ onLogout }) {
                                     <Table hover className="align-middle mb-0 text-nowrap">
                                         <thead className="text-uppercase fs-7 text-white" style={{ backgroundColor: '#EB2737' }}>
                                             <tr>
-                                                <th className="py-3 ps-3">Entrada</th>
+                                                {abaAtiva === 'pendentes' && (
+                                                    <th className="py-3 ps-3" style={{ width: '40px' }}>
+                                                        <Form.Check
+                                                            type="checkbox"
+                                                            onChange={() => toggleSelecionarTodos(listaFiltrada)}
+                                                            checked={itensSelecionados.length === listaFiltrada.length && listaFiltrada.length > 0}
+                                                        />
+                                                    </th>
+                                                )}
+                                                <th className={abaAtiva !== 'pendentes' ? 'ps-3 py-3' : 'py-3'}>Entrada</th>
                                                 <th className="py-3">Saída</th>
                                                 <th className="py-3">Empresa / Terceiro</th>
                                                 <th className="py-3">Equipamento</th>
@@ -345,14 +398,26 @@ export default function DashboardPortaria({ onLogout }) {
                                             {listaFiltrada.length > 0 ? (
                                                 listaFiltrada.map((item) => {
                                                     const jaSaiu = item.data_hora_saida != null;
+                                                    const selecionado = itensSelecionados.some(i => i.id === item.id);
+
                                                     return (
                                                         <tr
                                                             key={item.id}
                                                             onClick={() => abrirModalDetalhes(item)}
-                                                            style={{ cursor: 'pointer' }}
+                                                            style={{ cursor: 'pointer', backgroundColor: selecionado ? '#fff3cd' : 'transparent' }}
                                                             title="Clique para ver os detalhes completos"
                                                         >
-                                                            <td className="ps-3">
+                                                            {abaAtiva === 'pendentes' && (
+                                                                <td className="ps-3" onClick={(e) => e.stopPropagation()}>
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        checked={selecionado}
+                                                                        onChange={() => toggleSelecaoItem(item)}
+                                                                    />
+                                                                </td>
+                                                            )}
+
+                                                            <td className={abaAtiva !== 'pendentes' ? 'ps-3' : ''}>
                                                                 <div className="fw-bold">{formatarHora(item.data_hora_entrada)}</div>
                                                                 <small className="text-muted">{formatarData(item.data_hora_entrada)}</small>
                                                             </td>
@@ -413,7 +478,7 @@ export default function DashboardPortaria({ onLogout }) {
                                                                         className="fw-bold px-3 py-1 shadow-sm"
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            abrirModalSaida(item);
+                                                                            acionarSaidaUnica(item);
                                                                         }}
                                                                     >
                                                                         Liberar Saída
@@ -425,7 +490,7 @@ export default function DashboardPortaria({ onLogout }) {
                                                 })
                                             ) : (
                                                 <tr>
-                                                    <td colSpan={abaAtiva === 'pendentes' ? '9' : '8'} className="text-center py-5 text-muted text-wrap">
+                                                    <td colSpan={abaAtiva === 'pendentes' ? '10' : '9'} className="text-center py-5 text-muted text-wrap">
                                                         <div className="fs-2 mb-2 text-secondary">
                                                             <BsInbox />
                                                         </div>
@@ -451,8 +516,11 @@ export default function DashboardPortaria({ onLogout }) {
             <ModalSaida
                 show={showModalSaida}
                 handleClose={() => setShowModalSaida(false)}
-                itemSelecionado={itemParaSaida}
-                onSaidaSucesso={carregarDados}
+                itensSelecionados={itensSelecionados}
+                onSaidaSucesso={() => {
+                    setItensSelecionados([]);
+                    carregarDados();
+                }}
             />
 
             <ModalEmpresa

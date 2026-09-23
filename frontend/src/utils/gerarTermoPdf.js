@@ -17,14 +17,14 @@ const getBase64FromUrl = async (url) => {
 export const gerarTermoEntradaPDF = async (dados) => {
     const doc = new jsPDF();
     const dataAtual = dados.dataEntrada ? new Date(dados.dataEntrada).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
-    const dataSaida = dados.dataSaida ? new Date(dados.dataSaida).toLocaleDateString('pt-BR') : '';
 
     const listaEquipamentos = dados.equipamentos || [{
         equipamento_descricao: dados.equipamentoDescricao,
         marca_modelo: dados.marcaModelo,
         numero_serie: dados.numeroSerie,
         quantidade: dados.quantidade,
-        foto_equipamento_url: dados.fotoEquipamento
+        foto_equipamento_url: dados.fotoEquipamento,
+        data_hora_saida: dados.dataSaida
     }];
 
     try {
@@ -34,6 +34,13 @@ export const gerarTermoEntradaPDF = async (dados) => {
             doc.setFontSize(16); doc.setFont("helvetica", "bold"); doc.setTextColor(235, 39, 55); doc.text("VIDEPLAST", 14, 20);
         }
     } catch (error) { console.error("Erro na logo"); }
+
+    if (dados.codigoLote) {
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(235, 39, 55);
+        doc.text(`CÓDIGO DE SAÍDA: ${dados.codigoLote}`, 196, 20, { align: 'right' });
+    }
 
     doc.setFontSize(9); doc.setFont("helvetica", "normal"); doc.setTextColor(50, 50, 50);
     doc.text("55 64 3620 4500 | videplast.com.br", 14, 30);
@@ -46,11 +53,13 @@ export const gerarTermoEntradaPDF = async (dados) => {
 
     const bodyTabela = listaEquipamentos.map(eqp => {
         const descricaoCompleta = `${eqp.equipamento_descricao} ${eqp.marca_modelo ? `(${eqp.marca_modelo})` : ''} ${eqp.numero_serie ? `- Série: ${eqp.numero_serie}` : ''}`;
+        const dataSaidaFormatada = eqp.data_hora_saida ? new Date(eqp.data_hora_saida).toLocaleDateString('pt-BR') : '';
+
         return [
             descricaoCompleta,
             String(eqp.quantidade).padStart(2, '0'),
             dataAtual,
-            dataSaida,
+            dataSaidaFormatada,
             ''
         ];
     });
@@ -137,9 +146,7 @@ export const gerarTermoEntradaPDF = async (dados) => {
 
     doc.setFont("helvetica", "bold"); doc.text("NOME RESPONSÁVEL:", 14, sigY + 12);
     doc.setFont("helvetica", "normal"); doc.text(dados.terceiroNome || 'Não informado', 58, sigY + 12);
-
     doc.line(55, sigY + 13, 140, sigY + 13);
-
     doc.setFont("helvetica", "bold"); doc.text("DATA:", 150, sigY + 12);
     doc.setFont("helvetica", "normal"); doc.text(dataAtual, 165, sigY + 12);
     doc.line(162, sigY + 13, 190, sigY + 13);
@@ -151,5 +158,5 @@ export const gerarTermoEntradaPDF = async (dados) => {
     doc.setFont("helvetica", "normal"); doc.text(dataAtual, 165, sigY + 28);
     doc.line(162, sigY + 29, 190, sigY + 29);
 
-    doc.save(`Termo_${(dados.terceiroNome || 'Terceiro').replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+    doc.save(`Termo_Saida_${(dados.terceiroNome || 'Terceiro').replace(/\s+/g, '_')}_${Date.now()}.pdf`);
 };

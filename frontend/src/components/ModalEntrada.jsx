@@ -299,10 +299,10 @@ export default function ModalEntrada({ show, handleClose, onEntradaSucesso }) {
 
                 </Modal.Body>
                 <Modal.Footer className="bg-white px-4 py-3 border-top">
-                    <Button variant="secondary" onClick={handleClose} disabled={loading} size="lg">
+                    <Button variant="secondary" onClick={handleClose} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button variant="danger" type="submit" disabled={loading} size="lg" style={{ backgroundColor: '#EB2737', border: 'none' }}>
+                    <Button variant="danger" type="submit" disabled={loading} style={{ backgroundColor: '#EB2737', border: 'none' }}>
                         {loading ? <Spinner as="span" animation="border" size="sm" /> : 'Confirmar e Gerar Termo'}
                     </Button>
                 </Modal.Footer>

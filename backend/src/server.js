@@ -17,7 +17,6 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
 async function enriquecerRegistros(registros) {
     if (!registros || registros.length === 0) return [];
 
-    // Busca todos os crachás de uma vez para otimizar
     const { data: crachas } = await supabase.from('crachas').select('id, nome_completo');
     const mapaCrachas = {};
     if (crachas) {
@@ -232,7 +231,7 @@ app.get('/api/portaria/login/:id', async (req, res) => {
 });
 
 
-/** Função de consultas de registros (Histórico) **/
+/** Função de consultas de registros **/
 app.get('/api/portaria/historico', async (req, res) => {
     const { data, error } = await supabase
         .from('registros_portaria')
@@ -265,6 +264,56 @@ app.get('/api/portaria/historico', async (req, res) => {
 
     const dadosEnriquecidos = await enriquecerRegistros(data);
     return res.status(200).json(dadosEnriquecidos);
+});
+
+
+/** Função de saída em Lote **/
+app.put('/api/portaria/saida-lote', async (req, res) => {
+    const { ids, cracha_saida, observacao_saida, assinatura_terceiro, autorizadoPor, retiradoPor, codigo_saida } = req.body;
+
+    try {
+        let linkAssinaturaSaida = null;
+        if (assinatura_terceiro && assinatura_terceiro.startsWith('data:image')) {
+            const matches = assinatura_terceiro.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+                const mimeType = matches[1];
+                const buffer = Buffer.from(matches[2], 'base64');
+                const fileName = `assinaturas/saida_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('registro-portaria')
+                    .upload(fileName, buffer, { contentType: mimeType });
+
+                if (!uploadError) {
+                    const { data } = supabase.storage
+                        .from('registro-portaria')
+                        .getPublicUrl(fileName);
+                    linkAssinaturaSaida = data.publicUrl;
+                }
+            }
+        }
+
+        const { data, error } = await supabase
+            .from('registros_portaria')
+            .update({
+                data_hora_saida: new Date(),
+                cracha_saida_id: cracha_saida,
+                autorizado_por: autorizadoPor,
+                retirado_por: retiradoPor,
+                observacao: observacao_saida ? `Saída Lote: ${observacao_saida}` : undefined,
+                assinatura_terceiro: linkAssinaturaSaida || undefined,
+                codigo_saida: codigo_saida
+            })
+            .in('id', ids)
+            .select();
+
+        if (error) throw error;
+
+        return res.status(200).json({ mensagem: 'Saídas registradas com sucesso!', dados: data });
+    } catch (err) {
+        console.error("ERRO NA SAÍDA EM LOTE:", err);
+        return res.status(400).json({ erro: err.message });
+    }
 });
 
 app.use(express.static(path.join(__dirname, '../../frontend/dist')));
