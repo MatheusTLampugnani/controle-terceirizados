@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
-import api from '../services/api';
+import api from '../lib/api';
 
 export default function ModalFuncionario({ show, handleClose, onFuncionarioSalvo }) {
     const [empresas, setEmpresas] = useState([]);

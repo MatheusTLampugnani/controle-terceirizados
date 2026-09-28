@@ -1,18 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import Login from './pages/Login';
 import DashboardPortaria from './pages/DashboardPortaria';
+import { useAuth } from './modules/auth/hooks/useAuth';
 
 export default function App() {
-  const [crachaAtivo, setCrachaAtivo] = useState(localStorage.getItem('cracha_ativo'));
+  const { crachaAtivo, login, logout } = useAuth();
 
-  const handleLogin = (numeroCracha) => {
-    localStorage.setItem('cracha_ativo', numeroCracha);
-    setCrachaAtivo(numeroCracha);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('cracha_ativo');
-    setCrachaAtivo(null);
+  const handleLogin = async (numeroCracha) => {
+    await login(numeroCracha);
   };
 
   return (
@@ -20,7 +15,7 @@ export default function App() {
       {!crachaAtivo ? (
         <Login onLogin={handleLogin} />
       ) : (
-        <DashboardPortaria crachaAtivo={crachaAtivo} onLogout={handleLogout} />
+        <DashboardPortaria onLogout={logout} />
       )}
     </div>
   );
