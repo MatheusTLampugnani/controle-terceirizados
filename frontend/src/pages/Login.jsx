@@ -5,17 +5,18 @@ import { BsPersonBadgeFill } from 'react-icons/bs';
 export default function Login({ onLogin }) {
     const [cracha, setCracha] = useState('');
     const [loading, setLoading] = useState(false);
+    const [erro, setErro] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!cracha) return;
-
+        setErro('');
         setLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-            onLogin(cracha);
+            await onLogin(cracha);
         } catch (error) {
             console.error("Erro no login", error);
+            setErro(error.response?.data?.erro || "Credenciais inválidas");
         } finally {
             setLoading(false);
         }
@@ -58,6 +59,12 @@ export default function Login({ onLogin }) {
                                         autoFocus
                                     />
                                 </Form.Group>
+
+                                {erro && (
+                                    <div className="alert alert-danger p-2 small mb-3 text-center">
+                                        {erro}
+                                    </div>
+                                )}
 
                                 <Button
                                     variant="danger"

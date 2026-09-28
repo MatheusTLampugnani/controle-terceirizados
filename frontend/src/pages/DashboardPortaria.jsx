@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Container, Row, Col, Spinner, Card, Form, InputGroup, Nav } from 'react-bootstrap';
-import api from '../services/api';
-import { getOperadorAtual } from '../utils/auth';
 import logoVideplast from '../assets/videplast-brand.png';
 import {
     BsBoxSeam,
@@ -20,16 +18,23 @@ import ModalSaida from '../components/ModalSaida';
 import ModalEmpresa from '../components/ModalEmpresa';
 import ModalFuncionario from '../components/ModalFuncionario';
 import ModalDetalhes from '../components/ModalDetalhes';
+import { useRegistros } from '../modules/registros/hooks/useRegistros';
+import { useAuth } from '../modules/auth/hooks/useAuth';
 
 export default function DashboardPortaria({ onLogout }) {
-    const [abaAtiva, setAbaAtiva] = useState('pendentes');
-    const [pendentes, setPendentes] = useState([]);
-    const [historico, setHistorico] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [termoBusca, setTermoBusca] = useState('');
-
-    const operador = getOperadorAtual();
-    const [nomeOperadorExibicao, setNomeOperadorExibicao] = useState(operador.nome);
+    const { 
+        abaAtiva, setAbaAtiva, 
+        pendentes, historico,
+        loading, 
+        termoBusca, setTermoBusca, 
+        itensSelecionados, setItensSelecionados, 
+        carregarDados, 
+        listaFiltrada, 
+        toggleSelecaoItem, toggleSelecionarTodos 
+    } = useRegistros();
+    
+    const { nomeOperador, crachaAtivo } = useAuth();
+    const nomeOperadorExibicao = `${nomeOperador || 'Operador'} - ${crachaAtivo || ''}`;
 
     const [showModalEntrada, setShowModalEntrada] = useState(false);
     const [showModalEmpresa, setShowModalEmpresa] = useState(false);
@@ -38,101 +43,19 @@ export default function DashboardPortaria({ onLogout }) {
     const [showModalDetalhes, setShowModalDetalhes] = useState(false);
     const [itemDetalhes, setItemDetalhes] = useState(null);
 
-    const [itensSelecionados, setItensSelecionados] = useState([]);
-
-    const carregarDados = async () => {
-        setLoading(true);
-        try {
-            const rota = abaAtiva === 'pendentes' ? '/portaria/pendentes' : '/portaria/historico';
-            const response = await api.get(rota);
-
-            let dadosValidados = [];
-
-            if (Array.isArray(response.data)) {
-                dadosValidados = response.data;
-            } else if (response.data && Array.isArray(response.data.dados)) {
-                dadosValidados = response.data.dados;
-            } else {
-                console.error("A API não retornou uma lista válida:", response.data);
-            }
-
-            if (abaAtiva === 'pendentes') {
-                setPendentes(dadosValidados);
-            } else {
-                setHistorico(dadosValidados);
-            }
-
-            setItensSelecionados([]);
-
-        } catch (error) {
-            console.error("Erro ao buscar dados:", error);
-            if (abaAtiva === 'pendentes') setPendentes([]);
-            else setHistorico([]);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const buscarNomeOperadorReal = async () => {
-        const crachaAtivo = localStorage.getItem('cracha_ativo');
-        if (!crachaAtivo) return;
-
-        try {
-            const response = await api.get(`/portaria/login/${crachaAtivo}`);
-            if (response.data && response.data.usuario) {
-                const nomeCompleto = response.data.usuario.nome_completo;
-                localStorage.setItem('nome_operador', nomeCompleto);
-                setNomeOperadorExibicao(`${nomeCompleto} - ${crachaAtivo}`);
-            }
-        } catch (error) {
-            console.error("Erro ao buscar nome completo do operador:", error);
-            setNomeOperadorExibicao(`Operador - ${crachaAtivo}`);
-        }
-    };
-
     useEffect(() => {
         carregarDados();
-        buscarNomeOperadorReal();
-    }, [abaAtiva]);
+    }, [abaAtiva, carregarDados]);
 
     const abrirModalDetalhes = (item) => {
         setItemDetalhes(item);
         setShowModalDetalhes(true);
     };
 
-    const toggleSelecaoItem = (item) => {
-        const jaSelecionado = itensSelecionados.some(i => i.id === item.id);
-        if (jaSelecionado) {
-            setItensSelecionados(itensSelecionados.filter(i => i.id !== item.id));
-        } else {
-            setItensSelecionados([...itensSelecionados, item]);
-        }
-    };
-
-    const toggleSelecionarTodos = (lista) => {
-        if (itensSelecionados.length === lista.length && lista.length > 0) {
-            setItensSelecionados([]);
-        } else {
-            setItensSelecionados([...lista]);
-        }
-    };
-
     const acionarSaidaUnica = (item) => {
         setItensSelecionados([item]);
         setShowModalSaida(true);
     };
-
-    const listaAtual = abaAtiva === 'pendentes' ? pendentes : historico;
-
-    const listaFiltrada = listaAtual.filter((item) => {
-        const busca = termoBusca.toLowerCase();
-        const equipamento = item.equipamento_descricao?.toLowerCase() || '';
-        const pessoa = item.pessoas_terceiras?.nome?.toLowerCase() || '';
-        const empresa = item.pessoas_terceiras?.empresas_terceiras?.nome?.toLowerCase() || '';
-        const serie = item.numero_serie?.toLowerCase() || '';
-
-        return equipamento.includes(busca) || pessoa.includes(busca) || empresa.includes(busca) || serie.includes(busca);
-    });
 
     const formatarData = (dataIso) => dataIso ? new Date(dataIso).toLocaleDateString('pt-BR') : '—';
     const formatarHora = (dataIso) => dataIso ? new Date(dataIso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Row, Col, Spinner, Image, Card } from 'react-bootstrap';
 import { BsPlusCircle, BsTrash } from 'react-icons/bs';
 import Select from 'react-select';
-import api from '../services/api';
+import api from '../lib/api';
 import { gerarTermoEntradaPDF } from '../utils/gerarTermoPdf';
 import { getOperadorAtual } from '../utils/auth';
 

@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Modal, Button, Form, Row, Col, Spinner, Badge } from 'react-bootstrap';
 import SignatureCanvas from 'react-signature-canvas';
 import { getOperadorAtual } from '../utils/auth';
-import api from '../services/api';
+import api from '../lib/api';
 import { gerarTermoEntradaPDF } from '../utils/gerarTermoPdf';
 
 export default function ModalSaida({ show, handleClose, itensSelecionados, onSaidaSucesso }) {

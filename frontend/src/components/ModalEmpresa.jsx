@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
-import api from '../services/api';
+import api from '../lib/api';
 
 export default function ModalEmpresa({ show, handleClose, onEmpresaSalva }) {
     const [nome, setNome] = useState('');
